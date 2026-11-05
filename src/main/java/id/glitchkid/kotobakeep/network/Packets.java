@@ -7,8 +7,38 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 public final class Packets {
+    public record CollectionRequest() implements CustomPacketPayload {
+        public static final Type<CollectionRequest> TYPE = new Type<>(Identifier.fromNamespaceAndPath("kotobakeep", "collection_request"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, CollectionRequest> CODEC = new StreamCodec<>() {
+            public CollectionRequest decode(RegistryFriendlyByteBuf b) { return new CollectionRequest(); }
+            public void encode(RegistryFriendlyByteBuf b, CollectionRequest p) {}
+        };
+        public Type<CollectionRequest> type() { return TYPE; }
+    }
+    public record CollectionSnapshot(List<String> collected, List<String> correct) implements CustomPacketPayload {
+        public static final Type<CollectionSnapshot> TYPE = new Type<>(Identifier.fromNamespaceAndPath("kotobakeep", "collection_snapshot"));
+        private static List<String> read(RegistryFriendlyByteBuf b) {
+            int size = b.readVarInt();
+            if (size < 0 || size > 8192) throw new DecoderException("Invalid collection size: " + size);
+            var result = new ArrayList<String>(size);
+            for (int i = 0; i < size; i++) result.add(b.readUtf(256));
+            return List.copyOf(result);
+        }
+        private static void write(RegistryFriendlyByteBuf b, List<String> items) {
+            if (items.size() > 8192) throw new IllegalArgumentException("Collection too large");
+            b.writeVarInt(items.size());
+            for (String item : items) b.writeUtf(item, 256);
+        }
+        public static final StreamCodec<RegistryFriendlyByteBuf, CollectionSnapshot> CODEC = new StreamCodec<>() {
+            public CollectionSnapshot decode(RegistryFriendlyByteBuf b) { return new CollectionSnapshot(read(b), read(b)); }
+            public void encode(RegistryFriendlyByteBuf b, CollectionSnapshot p) { write(b, p.collected); write(b, p.correct); }
+        };
+        public Type<CollectionSnapshot> type() { return TYPE; }
+    }
     /**
      * item: icon to show (a spawn egg for mobs). key: translation key of the name, which picks the voice clip.
      * replayCost: ticks a replay takes off the timer; 0 turns replays off.
@@ -102,6 +132,8 @@ public final class Packets {
         public Type<Result> type() { return TYPE; }
     }
     public static void register() {
+        PayloadTypeRegistry.serverboundPlay().register(CollectionRequest.TYPE, CollectionRequest.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CollectionSnapshot.TYPE, CollectionSnapshot.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(Challenge.TYPE, Challenge.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(Result.TYPE, Result.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(Answer.TYPE, Answer.CODEC);

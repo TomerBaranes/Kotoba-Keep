@@ -2,9 +2,35 @@
 
 # Kotoba Keep
 
+## Collection and hover-tooltip edition
+
+This fork extends [Feeeh/Kotoba-Keep](https://github.com/Feeeh/Kotoba-Keep) v1.5.0.
+The original mod is by **glitchk.id**; this fork retains its MIT license, credits,
+and third-party notices. The additions below are specific to this edition.
+
+To share or install this edition, use this fork's [Releases](https://github.com/TomerBaranes/Kotoba-Keep/releases) page and download its
+compiled JAR. **Code → Download ZIP** downloads source code, which must be built
+before Minecraft can load it. Replace older Kotoba Keep JARs instead of installing
+both versions together. Keep the dependencies and speech model described below.
+
+- **B** opens the Item Collection, also accessible through **K** settings. Search names,
+  Japanese, readings, romaji, or item IDs; cycle filters and use the page arrows.
+- Gold bars mark collected base item types; green bars mark names answered correctly
+  at least once. Correct-answer milestones survive failed reviews. Progress is saved
+  per player, per world in `data/kotobakeep-collection.json`.
+- Current inventory and older answer history are imported. Earlier consumed/dropped
+  items cannot be reconstructed, and old failed reviews did not retain past successes.
+- The catalogue includes translated registered items, including creative-only types;
+  variants such as potion effects are represented by their base item type.
+- **K → Item Hover Tooltips** provides independent Japanese name (kanji/katakana),
+  hiragana reading, and romaji switches. These do not change challenge hints.
+- Collection tracking and hover lookup work while challenges are paused or the
+  microphone is off. Multiplayer servers also need this update for collection sync.
+
 **Say it to keep it.** A Minecraft **26.3 / Fabric** mod by **glitchk.id** that teaches you the original Japanese names of Minecraft items.
 
-**Download:** [CurseForge](https://www.curseforge.com/minecraft/mc-mods/kotoba-keep)
+**Download this edition:** [GitHub Releases](https://github.com/TomerBaranes/Kotoba-Keep/releases).
+The [original edition is on CurseForge](https://www.curseforge.com/minecraft/mc-mods/kotoba-keep).
 
 Pick up an item and a small panel appears at the top of the screen with its Japanese name, furigana above the kanji, romaji, what it's called in your own game language, and a countdown. New words are spoken to you first; say the name into your Simple Voice Chat microphone before time runs out to keep the item. Get it right and you hear the word again in natural Japanese. Run out of time and the newly picked-up items are removed. Kill a mob and you have to name it too, or its drops disappear.
 
@@ -34,7 +60,7 @@ Pick up an item and a small panel appears at the top of the screen with its Japa
 
 ## Install
 
-1. Download `kotoba-keep-<version>.jar` from [CurseForge](https://www.curseforge.com/minecraft/mc-mods/kotoba-keep), then put it, Fabric API and Simple Voice Chat into your instance's `mods/` folder.
+1. Download the mod JAR from [this fork's releases](https://github.com/TomerBaranes/Kotoba-Keep/releases), then put it, Fabric API and Simple Voice Chat into your instance's `mods/` folder. Replace older Kotoba Keep JARs; keep only one installed.
 2. Download [vosk-model-small-ja-0.22.zip](https://alphacephei.com/vosk/models/vosk-model-small-ja-0.22.zip) and extract its `vosk-model-small-ja-0.22` folder into `config/kotobakeep/`.
 
 **CurseForge on Windows:** create a Minecraft 26.3 Fabric profile named `Kotoba Keep`, then run the installer from a build (see [Building](#building)). It copies the mod, downloads the pinned Fabric API and Simple Voice Chat releases (SHA-512 verified) and the speech model (SHA-256 verified):

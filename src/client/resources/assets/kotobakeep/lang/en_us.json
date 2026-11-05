@@ -47,5 +47,13 @@
   "kotobakeep.options.retryWindowSeconds": "Retry Window",
   "kotobakeep.options.retryWindowSeconds.tooltip": "How long the \"Need more time?\" offer stays after a timeout.",
   "kotobakeep.options.replayCostSeconds": "Replay Cost",
-  "kotobakeep.options.replayCostSeconds.tooltip": "Seconds a replay (J) takes off the timer. 0 turns replays off."
+  "kotobakeep.options.replayCostSeconds.tooltip": "Seconds a replay (J) takes off the timer. 0 turns replays off.",
+  "key.kotobakeep.collection": "Open Item Collection",
+  "kotobakeep.options.itemTooltips": "Item Hover Tooltips",
+  "kotobakeep.options.tooltipJapanese": "Japanese Name (Kanji)",
+  "kotobakeep.options.tooltipJapanese.tooltip": "Show the original Japanese item name, including its kanji or katakana, when hovering an item.",
+  "kotobakeep.options.tooltipHiragana": "Hiragana Reading",
+  "kotobakeep.options.tooltipHiragana.tooltip": "Show the kana pronunciation when hovering an item. Independent of challenge hints.",
+  "kotobakeep.options.tooltipRomaji": "Tooltip Romaji",
+  "kotobakeep.options.tooltipRomaji.tooltip": "Show Latin-letter pronunciation in item tooltips. Independent of the challenge Romaji setting."
 }

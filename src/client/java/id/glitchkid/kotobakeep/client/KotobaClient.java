@@ -17,6 +17,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -27,6 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.resources.Identifier;
 import java.util.UUID;
+import java.util.Set;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 public final class KotobaClient implements ClientModInitializer {
@@ -42,7 +44,9 @@ public final class KotobaClient implements ClientModInitializer {
     Japanese.Word word;
     int remaining, resultTicks, outcome = -1, removed, retryRemaining, retryTotalTicks;
     boolean started, submitted, flushed, pausedByUser, retryRequested;
-    KeyMapping retryKey, replayKey, settingsKey;
+    KeyMapping retryKey, replayKey, settingsKey, collectionKey;
+    Set<String> collectedItems = Set.of(), correctItems = Set.of();
+    boolean collectionLoaded;
     String heard = "";
     // Read by ChallengeHud. listening: a new word's clip is playing before the timer starts.
     // replayFlash: ticks left to show the replay cost on the timer after a replay.
@@ -55,10 +59,19 @@ public final class KotobaClient implements ClientModInitializer {
     private int tick;
     public void onInitializeClient() {
         INSTANCE = this; speech = new SpeechRecognizer();
+        ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> ItemNameTooltip.add(stack, lines));
         var keys = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("kotobakeep", "controls"));
         retryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.kotobakeep.retry", InputConstants.KEY_R, keys));
         replayKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.kotobakeep.replay", InputConstants.KEY_J, keys));
         settingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.kotobakeep.settings", InputConstants.KEY_K, keys));
+        collectionKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.kotobakeep.collection", InputConstants.KEY_B, keys));
+        ClientPlayNetworking.registerGlobalReceiver(Packets.CollectionSnapshot.TYPE, (packet, context) -> {
+            collectedItems = Set.copyOf(packet.collected()); correctItems = Set.copyOf(packet.correct()); collectionLoaded = true;
+            if (Minecraft.getInstance().gui.screen() instanceof CollectionScreen screen) screen.refresh();
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            collectedItems = Set.of(); correctItems = Set.of(); collectionLoaded = false;
+        });
         VoiceBridge.audio = speech::audio;
         ClientPlayNetworking.registerGlobalReceiver(Packets.Challenge.TYPE, (packet, context) -> begin(packet));
         ClientPlayNetworking.registerGlobalReceiver(Packets.Result.TYPE, (packet, context) -> {
@@ -143,6 +156,7 @@ public final class KotobaClient implements ClientModInitializer {
         while (retryKey.consumeClick()) requestRetry();
         while (replayKey.consumeClick()) requestReplay();
         while (settingsKey.consumeClick()) client.gui.setScreen(new SettingsScreen(null));
+        while (collectionKey.consumeClick()) client.gui.setScreen(new CollectionScreen(null));
         if(tick%20==0)sendReady(available()?1:0,zero);
         if(client.isPaused())return; // the sound engine pauses our clip too, so the mute waits with it
         tickClip(client);

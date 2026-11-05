@@ -57,6 +57,9 @@ public final class Config {
     public boolean gentleFirstMeeting = false;
     public int hudTop = 12;
     public boolean showRomaji = true;
+    public boolean tooltipJapanese = true;
+    public boolean tooltipHiragana = true;
+    public boolean tooltipRomaji = true;
     public String modelPath = "config/kotobakeep/vosk-model-small-ja-0.22";
 
     private static Path path() { return FabricLoader.getInstance().getConfigDir().resolve("kotobakeep.json"); }

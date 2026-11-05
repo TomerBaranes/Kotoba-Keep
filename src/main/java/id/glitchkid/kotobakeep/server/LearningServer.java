@@ -34,6 +34,8 @@ public final class LearningServer {
         /** The tick from which the next never-answered word may be asked (limitNewWords). */
         long nextNewWord;
         int[] sentLocked = new int[0];
+        long collectionRequestAt = -1000;
+        boolean importedCollection;
     }
     private static final class Pending {
         UUID id = UUID.randomUUID();
@@ -74,6 +76,9 @@ public final class LearningServer {
     private final Random random = new Random();
     private LearningProgress progress = new LearningProgress();
     private final Path progressPath;
+    private CollectionProgress collection = new CollectionProgress();
+    private final Path collectionPath;
+    private boolean collectionDirty;
     private long tick;
     private boolean dirty;
     // A mob's drops spawn between ALLOW_DEATH and AFTER_DEATH; items loaded in that window are its loot.
@@ -82,6 +87,10 @@ public final class LearningServer {
 
     public LearningServer(MinecraftServer server) {
         progressPath = server.getWorldPath(LevelResource.ROOT).resolve("data/kotobakeep-words.json");
+        collectionPath = progressPath.resolveSibling("kotobakeep-collection.json");
+        try {
+            if (Files.exists(collectionPath)) collection = CollectionProgress.fromJson(Files.readString(collectionPath));
+        } catch (Exception e) { KotobaKeep.LOG.error("Could not read item collection", e); }
         Path mastery = progressPath.resolveSibling("kotobakeep-mastery.json");
         try {
             if (Files.exists(progressPath)) {
@@ -107,6 +116,26 @@ public final class LearningServer {
             ? LearningRules.growingDue(now, streak, config.reviewGapMinutes)
             : LearningRules.nextDue(now, config.repeatMinSeconds, config.repeatMaxSeconds, random));
         dirty = true;
+        if (!progressKey.startsWith("entity/")) collectionDirty |= collection.correct(player.getUUID(), progressKey);
+    }
+    /** Each request returns only the requesting player's history. */
+    public void collection(ServerPlayer player) {
+        if (!ServerPlayNetworking.canSend(player, Packets.CollectionSnapshot.TYPE)) return;
+        var session = sessions.computeIfAbsent(player.getUUID(), key -> new Session());
+        if (tick - session.collectionRequestAt < 20) return;
+        session.collectionRequestAt = tick;
+        trackCollection(player, session, snapshot(player));
+        ServerPlayNetworking.send(player, new Packets.CollectionSnapshot(
+            collection.collected(player.getUUID()).stream().sorted().toList(),
+            collection.correct(player.getUUID()).stream().sorted().toList()));
+    }
+    private void trackCollection(ServerPlayer player, Session session, Map<Item, Integer> inventory) {
+        if (!session.importedCollection) {
+            collectionDirty |= collection.importHistory(player.getUUID(), progress);
+            session.importedCollection = true;
+        }
+        for (Item item : inventory.keySet())
+            collectionDirty |= collection.collect(player.getUUID(), BuiltInRegistries.ITEM.getKey(item).toString());
     }
     /** A never-answered word must wait for the new-word limit, and takes the slot when it passes. Known words always pass. */
     private boolean admit(Session s, LearningProgress.Entry known) {
@@ -216,10 +245,11 @@ public final class LearningServer {
             tickPlayer(player, s);
             syncLockedDrops(player, s);
         }
-        if (dirty && tick % 200 == 0) save();
+        if ((dirty || collectionDirty) && tick % 200 == 0) save();
     }
     private void tickPlayer(ServerPlayer player, Session s) {
         Map<Item, Integer> inventory = snapshot(player);
+        trackCollection(player, s, inventory);
         if (s.previous == null) s.previous = inventory;
         if (!available(player, s)) { cancel(player, s); s.previous = inventory; return; }
         for (var entry : inventory.entrySet()) {
@@ -321,6 +351,16 @@ public final class LearningServer {
         save();
     }
     public void save() {
+        if (collectionDirty) {
+            try {
+                Files.createDirectories(collectionPath.getParent());
+                Path temp = collectionPath.resolveSibling(collectionPath.getFileName() + ".tmp");
+                Files.writeString(temp, collection.toJson());
+                try { Files.move(temp, collectionPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE); }
+                catch (AtomicMoveNotSupportedException e) { Files.move(temp, collectionPath, StandardCopyOption.REPLACE_EXISTING); }
+                collectionDirty = false;
+            } catch (Exception e) { KotobaKeep.LOG.error("Could not save item collection", e); }
+        }
         if (!dirty) return;
         try {
             Files.createDirectories(progressPath.getParent());

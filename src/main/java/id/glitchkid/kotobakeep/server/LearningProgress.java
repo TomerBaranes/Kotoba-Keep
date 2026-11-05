@@ -31,6 +31,12 @@ public final class LearningProgress {
         return entry == null ? 0 : entry.streak();
     }
 
+    /** Best available evidence from older saves; failures had overwritten earlier successes. */
+    public Map<String, Entry> words(UUID player) {
+        var entries = words.get(player.toString());
+        return entries == null ? Map.of() : Map.copyOf(entries);
+    }
+
     /** nextDue maps the new streak to the tick the word may be asked again. */
     public void recordSuccess(UUID player, String item, IntToLongFunction nextDue) {
         int streak = streak(player, item) + 1;

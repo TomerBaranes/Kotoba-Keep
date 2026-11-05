@@ -34,6 +34,7 @@ public final class KotobaKeep implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(Packets.Answer.TYPE, (packet, context) -> { if (SERVER != null) SERVER.answer(context.player(), packet); });
         ServerPlayNetworking.registerGlobalReceiver(Packets.Retry.TYPE, (packet, context) -> { if (SERVER != null) SERVER.retry(context.player(), packet); });
         ServerPlayNetworking.registerGlobalReceiver(Packets.Replay.TYPE, (packet, context) -> { if (SERVER != null) SERVER.replay(context.player(), packet); });
+        ServerPlayNetworking.registerGlobalReceiver(Packets.CollectionRequest.TYPE, (packet, context) -> { if (SERVER != null) SERVER.collection(context.player()); });
         LOG.info("Kotoba Keep by glitchk.id — say it to keep it.");
     }
 }

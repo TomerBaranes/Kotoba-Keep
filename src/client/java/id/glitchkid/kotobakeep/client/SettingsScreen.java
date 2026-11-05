@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -40,6 +41,11 @@ final class SettingsScreen extends OptionsSubScreen {
 
     protected void addOptions() {
         addDisplay();
+        list.addHeader(Component.translatable(KEY + "itemTooltips"));
+        list.addSmall(toggle("tooltipJapanese", draft.tooltipJapanese, value -> draft.tooltipJapanese = value),
+            toggle("tooltipHiragana", draft.tooltipHiragana, value -> draft.tooltipHiragana = value));
+        list.addSmall(toggle("tooltipRomaji", draft.tooltipRomaji, value -> draft.tooltipRomaji = value));
+        list.addSmall(Button.builder(Component.literal("Item Collection (B)"), button -> Minecraft.getInstance().gui.setScreen(new CollectionScreen(this))).width(150).build(), null);
         if (serverRules) {
             list.addHeader(Component.translatable(KEY + "setByServer"));
             return;
